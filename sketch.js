@@ -11,7 +11,7 @@ let button_reset
 let checkbox
 var debug = false
 var GEN = 1 // generation
-
+var frame = 0
 function preload() {
     rock = loadImage('assets/rock.png')
     paper = loadImage('assets/paper.png')
@@ -24,7 +24,7 @@ function preload() {
 
 function resetSketch() {
     agents = []
-    numOfAgents = 5
+    numOfAgents = 2
     for (let i = 0; i < numOfAgents; i++) {
         agents.push(new AgentGeneric('rock'))
         agents.push(new AgentGeneric('paper'))
@@ -36,7 +36,7 @@ function resetSketch() {
 function setup() {
     rectMode(CENTER)
     imageMode(CENTER)
-    createCanvas(200, 200)
+    createCanvas(150, 150)
     resetSketch()
     button = createButton('Pause/Play')
     button.position(width / 2 - 50, height)
@@ -60,9 +60,11 @@ function draw() {
     fill("white")
     textSize(10);
     text(`Generation : ${GEN}`, 5, 10);
+    text(`frames : ${frame}`, 5, 20);
     // show GEN text
 
-    for (let cycle = 0; cycle < 3; cycle++) {
+    frame += 1
+    for (let cycle = 0; cycle < 1; cycle++) {
         for (let i = 0; i < agents.length; i++) {
             let curr = agents[i]
             rectangle = new Rectangle(
@@ -85,13 +87,20 @@ function draw() {
         if (debug) show(qtree)        
     }
     if (agents.every((agent) => agent.choice === agents[0].choice)) {
-        console.log(`GAME OVER !!! ${agents[0].choice} WINS.`)
-        noLoop()
-        // alert(`GAME OVER !!! ${agents[0].choice} WINS.`)
-
-        // START new generation process
-        nextGeneration()
+        getNextGeneration(`GAME OVER !!! ${agents[0].choice} WINS.`)
     }
+    // if (GEN < 60 && frame > 150) {
+    //     getNextGeneration("TIMEOUT !!!")
+    // }
+    // if (GEN >= 60 && frame > 350) {
+    //     getNextGeneration("TIMEOUT !!!")
+    // }
+}
+
+function getNextGeneration(text) {
+    console.log(text)
+    noLoop()
+    nextGeneration()        
 }
 
 function show(qtree) {

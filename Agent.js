@@ -8,9 +8,11 @@ function mutate_fn(x) {
 	}
 }
 
+let MAX_SCORE = 200
+let POINTS_PER_PREY = 0.5 * MAX_SCORE
 // base class for all agents -> 🤘 📰 ✂
 class Agent {
-	constructor(x = random(width - 20), y = random(height - 20), brain) {
+	constructor(x = random(width - 20), y = random(height - 20), brain, isOld) {
 		this.r = 20; // gets complicated if r is exposed
 
 		this.highlight = false;
@@ -21,23 +23,25 @@ class Agent {
 		this.position.x = constrain(this.position.x, this.r, width - this.r);
 		this.position.y = constrain(this.position.y, this.r, height - this.r);
 
-		this.score = 0; //  score is how many frames it has been alive
-		this.fitness = 0; // to get fitness; we simply normalize the score
+		this.score = 0; 			//  score is how many frames it has been alive
+		this.prey_score = 0; // how many prey it has eaten
+		this.fitness = 0; 	// to get fitness; normalize the score; the score is score + (prey_score*points_per_prey)
 		if (brain) {
-			this.brain = brain.copy();
+			if (isOld && this.cache_brain) {
+				this.brain = this.cache_brain.copy();
+			}else {
+				this.brain = brain.copy();
+			}
 			this.brain.mutate(mutate_fn);
 		} else {
 			this.brain = new NeuralNetwork(6, 10, 4); // pos(x,y),  prey(x,y), predator(x,y)
-			// velocity need not be an input coz here its simply used as a constant to not be stationary
-			// output should tell us if to use negetive position or not ?
 		}
 		this.cache_brain = null; // cache its original weights
 		this.cache_score = null; // cache its original score
-		// suppose there are 6 agents
-		// in the end only 1 type of agent survive
-		// how to get genetic information of those other agents which are now extinct
-		// so we just back up its initial brain so that we can use that for next generation
+		this.cache_prey_score = null; // cache its original prey score
 	}
+
+
 
 	draw(i) {
 		if (this.highlight) {
@@ -58,7 +62,7 @@ class Agent {
 
 	move() {
 		this.position.add(this.velocity);
-		this.score += 1; // TODO:is it growing too fast ?
+		this.score = min(this.score+1, MAX_SCORE);
 	}
 
 	jitter() {
@@ -95,8 +99,8 @@ class Agent {
 }
 
 class AgentGeneric extends Agent {
-	constructor(choice, x = random(width - 20), y = random(height - 20), brain) {
-		super(x, y, brain);
+	constructor(choice, x = random(width - 20), y = random(height - 20), brain, isOld) {
+		super(x, y, brain, isOld);
 		this.choice = choice;
 		this.choice_code = this.getChoiceCode(choice);
 		this.choices = [this.choice]; // recording its transition
@@ -104,12 +108,14 @@ class AgentGeneric extends Agent {
 	}
 
 	// this will also mutate the brain
-	copy(choice) {
+	// todo : can I avoid isOld ?
+	copy(choice, isOld=false) {
 		return new AgentGeneric(
 			choice,
 			random(width - 20),
 			random(height - 20),
-			this.brain
+			this.brain,
+			isOld
 		);
 	}
 
@@ -130,12 +136,14 @@ class AgentGeneric extends Agent {
 		looser.choice = winner.choice;
 		looser.choice_code = winner.choice_code;
 		if (!this.cache_brain) this.cache_brain = looser.brain.copy();
-		if (!this.cache_score) this.cache_score = 0.8 * looser.score; // save 80 percent score
+		if (!this.cache_score) this.cache_score = 0.8 * looser.score; // save 80 percent score --> where is this used ?
 		let winner_brain = winner.brain.copy(); // can it create unwanted reference ?
 		winner_brain.mutate(mutate_fn);
 		looser.brain = winner_brain;
 		looser.score = 0;
-		winner.score += 0.2 * winner.score; // increase by 20 percent
+		looser.prey_score = 0;
+		// winner.score += 0.5 * MAX_SCORE; // increase by 100 points since max score is 200
+		winner.prey_score += 1
 	}
 
 	draw(i) {
