@@ -22,7 +22,10 @@
         - [x] figure out how to get data of each type of agent. Remember this game ends when there is only type remaining
             - [x] caching brain ?
     - [x] generate -ve or not from brain
-    - [] limit score to a particular max score
+    - [x] limit score to a particular max score
+    - [] each agent will store numOfAgent agents of all types (maximum). If max is reached, we will remove one of the agent with smallest net score.
+        - example if there are 6 agents (numOfAgents is 2), a rock agent will have a history property like: history: [rock: [(2 rock)], p: [(2 p)], s: [(2 s)]]
+    - [] a new generation will look at all of history for getting accurate fitness
     
     - To think about
         - [] if I introduce obstacles, I will really know if this env is actully learning
@@ -34,4 +37,8 @@
     - load the weights and see how it performs
     - noooo I forgot to use the cached brain; what about cached score
     - when it times out, I cannot really use agents[0] for the "winner" case 
+
+
+
+    - we can use Array.slice() to get a copy of an Array
     

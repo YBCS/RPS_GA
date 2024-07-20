@@ -9,6 +9,7 @@ let scissor_sound
 let button
 let button_reset
 let checkbox
+let numOfAgents
 var debug = false
 var GEN = 1 // generation
 var frame = 0
@@ -23,6 +24,8 @@ function preload() {
 }
 
 function resetSketch() {
+    GEN = 1
+    frame = 0
     agents = []
     numOfAgents = 2
     for (let i = 0; i < numOfAgents; i++) {
@@ -36,7 +39,7 @@ function resetSketch() {
 function setup() {
     rectMode(CENTER)
     imageMode(CENTER)
-    createCanvas(150, 150)
+    createCanvas(150, 80)
     resetSketch()
     button = createButton('Pause/Play')
     button.position(width / 2 - 50, height)

@@ -8,11 +8,16 @@ function mutate_fn(x) {
 	}
 }
 
+function uid(){
+	return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
 let MAX_SCORE = 200
-let POINTS_PER_PREY = 0.5 * MAX_SCORE
+let POINTS_PER_PREY = 0.4 * MAX_SCORE
 // base class for all agents -> 🤘 📰 ✂
 class Agent {
-	constructor(x = random(width - 20), y = random(height - 20), brain, isOld) {
+	constructor(x = random(width - 20), y = random(height - 20), brain) {
+		this.id = uid()
 		this.r = 20; // gets complicated if r is exposed
 
 		this.highlight = false;
@@ -27,18 +32,13 @@ class Agent {
 		this.prey_score = 0; // how many prey it has eaten
 		this.fitness = 0; 	// to get fitness; normalize the score; the score is score + (prey_score*points_per_prey)
 		if (brain) {
-			if (isOld && this.cache_brain) {
-				this.brain = this.cache_brain.copy();
-			}else {
-				this.brain = brain.copy();
-			}
+			this.brain = brain.copy();
 			this.brain.mutate(mutate_fn);
 		} else {
 			this.brain = new NeuralNetwork(6, 10, 4); // pos(x,y),  prey(x,y), predator(x,y)
 		}
-		this.cache_brain = null; // cache its original weights
-		this.cache_score = null; // cache its original score
-		this.cache_prey_score = null; // cache its original prey score
+
+		this.history = {"rock": [], "paper": [], "scissor": []} // cache numOfAgents agents of each type
 	}
 
 
@@ -56,7 +56,7 @@ class Agent {
 				`pos: (${int(this.position.x)}, ${int(this.position.y)}) ${str(i)}`,
 				this.position.x,
 				this.position.y
-			); // order matters
+			);
 		}
 	}
 
@@ -99,23 +99,22 @@ class Agent {
 }
 
 class AgentGeneric extends Agent {
-	constructor(choice, x = random(width - 20), y = random(height - 20), brain, isOld) {
-		super(x, y, brain, isOld);
+	constructor(choice, x = random(width - 20), y = random(height - 20), brain) {
+		super(x, y, brain);
 		this.choice = choice;
 		this.choice_code = this.getChoiceCode(choice);
-		this.choices = [this.choice]; // recording its transition
-		this.choice_codes = [this.choice_code];
+
+		this.choice_history = [this.choice]; // recording its transition
+		this.choice_code_history = [this.choice_code]; // recoring its transition
 	}
 
 	// this will also mutate the brain
-	// todo : can I avoid isOld ?
-	copy(choice, isOld=false) {
+	copy(brain) {
 		return new AgentGeneric(
-			choice,
+			this.choice,
 			random(width - 20),
 			random(height - 20),
-			this.brain,
-			isOld
+			brain
 		);
 	}
 
@@ -130,19 +129,60 @@ class AgentGeneric extends Agent {
 			: -1;
 	}
 
+	updateHistory(agent) {
+		// add history to the agent 
+
+		// I cannot push an agent directly because of reference error
+		agent.history[agent.choice].push({
+			choice: agent.choice,
+			choice_code: this.getChoiceCode(agent.choice),
+			score: 0.8 * agent.score,
+			prey_score: agent.prey_score,
+			brain: agent.brain.copy()
+		})
+
+		if (agent.history[agent.choice].length > numOfAgents) {
+			// remove the one with least score
+
+			let cur_net_score = agent.score + (agent.prey_score * POINTS_PER_PREY)
+			least_net_score = cur_net_score
+			least_net_score_index = -1
+			
+			for (let i = 0; i < agent.history[agent.choice].length; i++) {
+				past_agent = agent.history[agent.choice][i]
+				past_net_score = past_agent.score + (past_agent.prey_score * POINTS_PER_PREY)
+				if (past_net_score < least_net_score) {
+					least_net_score = past_net_score
+					least_net_score_index = i
+				}
+			}
+			if (least_net_score_index === -1) {
+				agent.history[agent.choice].pop()
+			} else {
+				agent.history[agent.choice].splice(least_net_score_index, 1)
+			}
+		}
+	}
+
 	updateChoice(winner, looser) {
-		looser.choices.push(winner.choice);
-		looser.choice_codes.push(winner.choice_code);
+		/*
+		update the choice of looser
+		mutate the winner brain
+		update score of looser and then winner
+		*/
+
+		looser.choice_history.push(winner.choice);
+		looser.choice_code_history.push(winner.choice_code);
+
 		looser.choice = winner.choice;
 		looser.choice_code = winner.choice_code;
-		if (!this.cache_brain) this.cache_brain = looser.brain.copy();
-		if (!this.cache_score) this.cache_score = 0.8 * looser.score; // save 80 percent score --> where is this used ?
+
+		
 		let winner_brain = winner.brain.copy(); // can it create unwanted reference ?
 		winner_brain.mutate(mutate_fn);
 		looser.brain = winner_brain;
 		looser.score = 0;
 		looser.prey_score = 0;
-		// winner.score += 0.5 * MAX_SCORE; // increase by 100 points since max score is 200
 		winner.prey_score += 1
 	}
 
@@ -398,6 +438,7 @@ class AgentGeneric extends Agent {
 			looser = item;
 		}
 
+		this.updateHistory(looser)
 		this.updateChoice(winner, looser);
 		return;
 	}
