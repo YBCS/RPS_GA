@@ -1,7 +1,6 @@
 // genetic algorithm stuff
 
 function nextGeneration() {
-
   print('all agents ', agents)
   let { rocks, papers, scissors } = segregate(agents)
   normalizeFitness(rocks)
@@ -23,7 +22,6 @@ function nextGeneration() {
   frame = 0
   if (!isLooping()) loop()
 }
-
 
 function segregate(oldAgents) {
   const rocks = []
@@ -103,7 +101,7 @@ function poolSelection(agents) {
     index += 1
   }
   index -= 1
-  
+
   agent = agents[index]
   return new AgentGeneric(
     agent.choice,
