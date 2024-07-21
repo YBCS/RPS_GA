@@ -96,8 +96,21 @@ function draw() {
   // if (GEN < 60 && frame > 150) {
   //     getNextGeneration("TIMEOUT !!!")
   // }
-  // if (GEN >= 60 && frame > 350) {
+  // if (GEN >= 60 && frame > 400) {
   //     getNextGeneration("TIMEOUT !!!")
+  // }
+
+  // if (GEN % 5 === 0 && frame === 0) {
+  //   print('Saving weights...')
+  //   // every 50 generation save progress
+  //   // save all the agents
+  //   // for an agent
+  //   //      - choice
+  //   //      - brain
+
+  //   let agentWriter = createWriter(`data${GEN}`, 'json')
+  //   agentWriter.print(JSON.stringify(agents))
+  //   agentWriter.close()
   // }
 }
 

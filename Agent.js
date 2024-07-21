@@ -139,12 +139,12 @@ class AgentGeneric extends Agent {
       // remove the one with least score
 
       let cur_net_score = agent.score + agent.prey_score * POINTS_PER_PREY
-      least_net_score = cur_net_score
-      least_net_score_index = -1
+      let least_net_score = cur_net_score
+      let least_net_score_index = -1
 
       for (let i = 0; i < agent.history[agent.choice].length; i++) {
-        past_agent = agent.history[agent.choice][i]
-        past_net_score =
+        let past_agent = agent.history[agent.choice][i]
+        let past_net_score =
           past_agent.score + past_agent.prey_score * POINTS_PER_PREY
         if (past_net_score < least_net_score) {
           least_net_score = past_net_score
