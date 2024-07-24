@@ -19,7 +19,8 @@
         - example if there are 6 agents (numOfAgents is 2), a rock agent will have a history property like: history: [rock: [(2 rock)], p: [(2 p)], s: [(2 s)]]
     - [] a new generation will look at all of history for getting accurate fitness
     - [] every 100 generation, back up all the weights 
-    - [] load the weights and see how it performs
+    - [] use ml5js library and see that it works
+        - [] can replace with own library later
 
 
     - to check how its done in others:

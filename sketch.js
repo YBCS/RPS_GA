@@ -13,7 +13,7 @@ let button_reset
 let checkbox
 let numOfAgents
 var debug = false
-var isPreloadAgents = true // just a flag for now
+var isPreloadAgents = false // just a flag for now
 var GEN = 1 // generation
 var frame = 0
 
@@ -72,14 +72,15 @@ function setup() {
   rectMode(CENTER)
   imageMode(CENTER)
   createCanvas(250, 80)
+  ml5.tf.setBackend("cpu");
   resetSketch()
   button = createButton('Pause/Play')
   button.position(width / 2 - 50, height)
   button.mousePressed(toggleLoop)
   
-  button_load = createButton('Load Agents')
-  button_load.position(width / 2 - 50, height + 30)
-  button_load.mousePressed(loadAgents)
+  // button_load = createButton('Load Agents')
+  // button_load.position(width / 2 - 50, height + 30)
+  // button_load.mousePressed(loadAgents)
   
   button_reset = createButton('Reset')
   button_reset.position(width - 50, height)
@@ -93,16 +94,14 @@ function toggleLoop() {
   isLooping() ? noLoop() : loop()
 }
 
-// maybe replace with own settimeout loop ?
 function draw() {
   debug = checkbox.checked() ? true : false
-  qtree = QuadTree.create()
+  let qtree = QuadTree.create()
   background(0)
   fill('white')
   textSize(10)
   text(`Generation : ${GEN}`, 5, 10)
   text(`frames : ${frame}`, 5, 20)
-  // show GEN text
 
   frame += 1
   for (let cycle = 0; cycle < 1; cycle++) {
@@ -116,24 +115,22 @@ function draw() {
         curr
       )
       qtree.insert(rectangle)
-      let range = new Circle(curr.position.x, curr.position.y, curr.r * 2) // range kinda small ?
+      let range = new Circle(curr.position.x, curr.position.y, curr.r * 2)
       let points = qtree.query(range)
       curr.checkCollisionsAndDrawLine(points)
-      // order matters because we set highlight in checkCollisions. draw() is called after this
       curr.draw()
       curr.jitter()
       curr.update()
-      // curr.boundary()
     }
     if (debug) show(qtree)
   }
   if (agents.every((agent) => agent.choice === agents[0].choice)) {
     getNextGeneration(`GAME OVER !!! ${agents[0].choice} WINS.`, false)
   }
-  if (GEN <= 100 && frame > 150) {
+  if (GEN <= 100 && frame > 400) {
       getNextGeneration("TIMEOUT !!!", true)
   }
-  if (GEN > 100 && frame > 400) {
+  if (GEN > 100 && frame > 800) {
       getNextGeneration("TIMEOUT !!!", true)
   }
 

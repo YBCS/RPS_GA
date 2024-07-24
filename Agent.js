@@ -14,6 +14,7 @@ function uid() {
 
 let MAX_SCORE = 200
 let POINTS_PER_PREY = 0.4 * MAX_SCORE
+let MUTATION_RATE = 0.1
 // base class for all agents -> 🤘 📰 ✂
 class Agent {
   constructor(x = random(width - 20), y = random(height - 20), brain) {
@@ -30,14 +31,23 @@ class Agent {
 
     this.score = 0 //  score is how many frames it has been alive
     this.prey_score = 0 // how many prey it has eaten
-    this.fitness = 0 // to get fitness; normalize the score; the score is score + (prey_score*points_per_prey)
+    this.explorationScore = 0 // how many cells it has explored
+    this.survivalTime = 0 // how long it has been alive
+    this.fitness = 0 // to get fitness; normalize the score
     if (brain) {
       this.brain = brain.copy()
-      this.brain.mutate(mutate_fn)
+      // this.brain.mutate(mutate_fn)
+      this.brain.mutate(MUTATION_RATE)
     } else {
-      this.brain = new NeuralNetwork(6, 10, 4) // pos(x,y),  prey(x,y), predator(x,y)
+      // this.brain = new NeuralNetwork(6, 10, 4) // pos(x,y),  prey(x,y), predator(x,y)
+      this.brain = ml5.neuralNetwork({
+        inputs: 7,
+        outputs: 2,
+        task: "regression",
+        neuroEvolution: true,
+      });
     }
-
+    this.visitedCells = new Set() // what happens in history
     this.history = { rock: [], paper: [], scissor: [] } // cache numOfAgents agents of each type
   }
 
@@ -61,6 +71,11 @@ class Agent {
   move() {
     this.position.add(this.velocity)
     this.score = min(this.score + 1, MAX_SCORE)
+    const cellKey = `${floor(this.position.x)},${floor(this.position.y)}`;
+    if (!this.visitedCells.has(cellKey)) {
+      this.visitedCells.add(cellKey);
+      this.explorationScore += 1
+    }
   }
 
   jitter() {
@@ -112,25 +127,27 @@ class AgentGeneric extends Agent {
     )
   }
 
-  static fromJSON(data) {
-    // assert data is JSON
-    // create a new agent and then overwrite its features
-    let agent = new AgentGeneric(data.choice)
-    agent.choice_code = data.choice_code
-    agent.choice_history = data.choice_history
-    agent.choice_code_history = data.choice_code_history
+  // // todo : can I use ml5.js for this ?
+  // static fromJSON(data) {
+  //   // assert data is JSON
+  //   // create a new agent and then overwrite its features
+  //   let agent = new AgentGeneric(data.choice)
+  //   agent.choice_code = data.choice_code
+  //   agent.choice_history = data.choice_history
+  //   agent.choice_code_history = data.choice_code_history
     
-    agent.id = data.id
-    agent.position = createVector(data.position.x, data.position.y)
-    agent.velocity = createVector(data.velocity.x, data.velocity.y)
-    agent.score = data.score
-    agent.prey_score = data.prey_score
-    agent.fitness = data.fitness
-    let temp_brain = NeuralNetwork.deserialize(data.brain)
-    agent.brain = temp_brain
-    agent.history = data.history
-    return agent
-  }
+  //   agent.id = data.id
+  //   agent.position = createVector(data.position.x, data.position.y)
+  //   agent.velocity = createVector(data.velocity.x, data.velocity.y)
+  //   agent.score = data.score
+  //   agent.prey_score = data.prey_score
+  //   agent.fitness = data.fitness
+  //   // todo : what about this ?
+  //   let temp_brain = NeuralNetwork.deserialize(data.brain)
+  //   agent.brain = temp_brain
+  //   agent.history = data.history
+  //   return agent
+  // }
 
   // rock 0, paper 1, scissor 2, unknown: -1
   getChoiceCode(choice) {
@@ -143,29 +160,38 @@ class AgentGeneric extends Agent {
       : -1
   }
 
-  updateHistory(agent) {
+  updateHistory(agent) { // agent is looser
     // add history to the agent
 
     // I cannot push an agent directly because of reference error
+    let cur_net_score = agent.score
+    cur_net_score += agent.prey_score * POINTS_PER_PREY
+    cur_net_score += agent.explorationScore * 10
+    cur_net_score += agent.survivalTime * 5
+
     agent.history[agent.choice].push({
       choice: agent.choice,
       choice_code: this.getChoiceCode(agent.choice),
-      score: 0.8 * agent.score,
+      score: 0.6 * cur_net_score,
       prey_score: agent.prey_score,
+      explorationScore: agent.explorationScore,
+      survivalTime: agent.survivalTime,
       brain: agent.brain.copy(),
     })
 
     if (agent.history[agent.choice].length > numOfAgents) {
       // remove the one with least score
 
-      let cur_net_score = agent.score + agent.prey_score * POINTS_PER_PREY
+
       let least_net_score = cur_net_score
       let least_net_score_index = -1
 
       for (let i = 0; i < agent.history[agent.choice].length; i++) {
         let past_agent = agent.history[agent.choice][i]
-        let past_net_score =
-          past_agent.score + past_agent.prey_score * POINTS_PER_PREY
+        let past_net_score = past_agent.score
+        past_net_score += past_agent.prey_score * POINTS_PER_PREY
+        past_net_score += past_agent.explorationScore * 10
+        past_net_score += past_agent.survivalTime * 5
         if (past_net_score < least_net_score) {
           least_net_score = past_net_score
           least_net_score_index = i
@@ -193,10 +219,13 @@ class AgentGeneric extends Agent {
     looser.choice_code = winner.choice_code
 
     let winner_brain = winner.brain.copy() // can it create unwanted reference ?
-    winner_brain.mutate(mutate_fn)
+    winner_brain.mutate(MUTATION_RATE)
     looser.brain = winner_brain
     looser.score = 0
     looser.prey_score = 0
+    looser.explorationScore = 0
+    looser.survivalTime = 0
+    looser.visitedCells = new Set()
     winner.prey_score += 1
   }
 
@@ -344,44 +373,44 @@ class AgentGeneric extends Agent {
     }
 
     this.think(predator, prey)
-
-    // // todo : this behaviour should evolve over time
-    // this.moveTowardsTarget(closest_scissor_from_rock, "red")
-    // ...
   }
 
   think(nearest_predatory, nearest_prey) {
     // if we are scissor; nearest predator = rock, nearest prey = paper
     // inputs can be null too
-    // prepare input
-    // process -> forward propage through brain
-    // use output for direction of movement?
-    let inputs = [0, 0, 0, 0, 0, 0] // pos, predotor, prey
+    let inputs = [0, 0, 0, 0, 0, 0, 0] // pos, predotor, prey
     let pos = this.position
-    inputs[0] = map(pos.x, 0, width, 0, 1) // 	todo : how does FlappyLearning does this normalization
-    inputs[1] = map(pos.y, 0, height, 0, 1) // todo : please confirm what are these inputs to map()
+    // inputs[0] = map(pos.x, 0, width, 0, 1)  // 	todo : how does FlappyLearning does this normalization
+    // inputs[1] = map(pos.y, 0, height, 0, 1)
+    inputs[0] = pos.x
+    inputs[1] = pos.y
+
     if (nearest_predatory) {
       let predator = nearest_predatory.userData.position
-      inputs[2] = map(predator.x, 0, width, 0, 1)
-      inputs[3] = map(predator.y, 0, height, 0, 1)
+      // inputs[2] = map(predator.x, 0, width, 0, 1)
+      // inputs[3] = map(predator.y, 0, height, 0, 1)
+      inputs[2] = predator.x
+      inputs[3] = predator.y
     }
     if (nearest_prey) {
       let prey = nearest_prey.userData.position
-      inputs[4] = map(prey.x, 0, width, 0, 1)
-      inputs[5] = map(prey.y, 0, height, 0, 1)
+      // inputs[4] = map(prey.x, 0, width, 0, 1)
+      // inputs[5] = map(prey.y, 0, height, 0, 1)
+      inputs[4] = prey.x
+      inputs[5] = prey.y
     }
+    let curr_score = this.score
+    curr_score += this.prey_score * POINTS_PER_PREY
+    curr_score += this.explorationScore * 10
+    curr_score += this.survivalTime * 5
+    // let max_possible_score = MAX_SCORE + (numOfAgents * POINTS_PER_PREY)
+    inputs[6] = curr_score
 
-    let output = this.brain.predict(inputs) // output is 2 numbers between o and 1 right ? --> its not negetive and that's a problem
-    // todo : check ecosystem project how it use output
-    // // create direction vector out of output  --> does it evolve attract/repel behaviour
-    // this negetive values should be decided by the brain   --> then make it output 4 values and use them
-    let direction = createVector(
-      (output[0] > 0.5 ? -1 : 1) * output[1],
-      (output[2] > 0.5 ? -1 : 1) * output[3]
-    )
-    direction.setMag(1)
-    // print('direction ', direction)
-    this.position.add(direction)
+    let output = this.brain.predictSync(inputs)
+    let angle = output[0].value * TWO_PI;
+    let magnitude = output[1].value;
+    let force = p5.Vector.fromAngle(angle).setMag(magnitude);
+    this.position.add(force)
   }
 
   moveTowardsTarget(closest_dst_from_src, color) {
@@ -391,7 +420,6 @@ class AgentGeneric extends Agent {
         closest_dst_from_src.userData.position,
         this.position
       )
-      print('the direction in move towards ', direction)
       direction.setMag(1)
       this.position.add(direction)
       // I think something should happen to the velocity here too

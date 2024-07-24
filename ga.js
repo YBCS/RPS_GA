@@ -32,7 +32,10 @@ function segregate(oldAgents, isTimeout) { // todo: is isTimeout necessary
 
   function pushToAgentList(agent) {
     if (!isTimeout) agent.score *= 3
-    const net_score = agent.score + agent.prey_score * POINTS_PER_PREY
+    let net_score = agent.score
+    net_score += agent.prey_score * POINTS_PER_PREY
+    net_score += agent.explorationScore * 10
+    net_score += agent.survivalTime * 5
     const agentData = {
       net_score: net_score,
       brain: agent.brain,
@@ -53,24 +56,36 @@ function segregate(oldAgents, isTimeout) { // todo: is isTimeout necessary
     }
 
     for (let rock of agent.history['rock']) {
+      let rock_net_score = rock.score
+      rock_net_score += rock.prey_score * POINTS_PER_PREY
+      rock_net_score += rock.explorationScore * 10
+      rock_net_score += rock.survivalTime * 5
       rocks.push({
-        net_score: rock.score + rock.prey_score * POINTS_PER_PREY,
+        net_score: rock_net_score,
         brain: rock.brain,
         fitness: 0,
         choice: rock.choice,
       })
     }
     for (let paper of agent.history['paper']) {
+      let paper_net_score = paper.score
+      paper_net_score += paper.prey_score * POINTS_PER_PREY
+      paper_net_score += paper.explorationScore * 10
+      paper_net_score += paper.survivalTime * 5
       papers.push({
-        net_score: paper.score + paper.prey_score * POINTS_PER_PREY,
+        net_score: paper_net_score,
         brain: paper.brain,
         fitness: 0,
         choice: paper.choice,
       })
     }
     for (let scissor of agent.history['scissor']) {
+      let scissor_net_score = scissor.score
+      scissor_net_score += scissor.prey_score * POINTS_PER_PREY
+      scissor_net_score += scissor.explorationScore * 10
+      scissor_net_score += scissor.survivalTime * 5      
       scissors.push({
-        net_score: scissor.score + scissor.prey_score * POINTS_PER_PREY,
+        net_score: scissor_net_score,
         brain: scissor.brain,
         fitness: 0,
         choice: scissor.choice,
