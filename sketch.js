@@ -1,4 +1,5 @@
 let agents
+let loadedAgents
 let rock
 let paper
 let scissor
@@ -7,12 +8,28 @@ let rock_sound
 let paper_sound
 let scissor_sound
 let button
+let button_load
 let button_reset
 let checkbox
 let numOfAgents
 var debug = false
+var isPreloadAgents = true // just a flag for now
 var GEN = 1 // generation
 var frame = 0
+
+function handleData(data) {
+  print('loaded json', data)
+  loadedAgents = []
+  for (let agent of data) {
+    let agentFromJSON = AgentGeneric.fromJSON(agent)
+    loadedAgents.push(agentFromJSON)
+  }
+  print('all agents loaded ', loadedAgents)
+}
+
+function handleLoadError(err) {
+  console.error("FAILED TO LOAD JSON ", err)
+}
 
 function preload() {
   rock = loadImage('assets/rock.png')
@@ -22,32 +39,52 @@ function preload() {
   // rock_sound = loadSound("assets/rock_effect.wav");
   // paper_sound = loadSound("assets/paper_effect.wav");
   // scissor_sound = loadSound("assets/scissor_effect.mp3");
+
+  isPreloadAgents ? loadJSON("checkpoint/data1050.json", handleData, handleLoadError) : null
 }
 
-function resetSketch() {
+function resetSketch(loadFromJson) {
+  print('reset pressed ', loadFromJson)
   GEN = 1
   frame = 0
-  agents = []
-  numOfAgents = 2
-  for (let i = 0; i < numOfAgents; i++) {
-    agents.push(new AgentGeneric('rock'))
-    agents.push(new AgentGeneric('paper'))
-    agents.push(new AgentGeneric('scissor'))
+  if (loadFromJson) {
+    agents = loadedAgents
+  } else {
+    agents = []
+    numOfAgents = 2
+    for (let i = 0; i < numOfAgents; i++) {
+      agents.push(new AgentGeneric('rock'))
+      agents.push(new AgentGeneric('paper'))
+      agents.push(new AgentGeneric('scissor'))
+    }
   }
-  if (!isLooping()) loop()
+if (!isLooping()) loop()
+}
+
+function loadAgents() {
+  resetSketch(true)
+}
+function resetSketchWithoutLoad() {
+  resetSketch(false)
 }
 
 function setup() {
   rectMode(CENTER)
   imageMode(CENTER)
-  createCanvas(150, 80)
+  createCanvas(250, 80)
   resetSketch()
   button = createButton('Pause/Play')
   button.position(width / 2 - 50, height)
   button.mousePressed(toggleLoop)
-  button = createButton('Reset')
-  button.position(width - 50, height)
-  button.mousePressed(resetSketch)
+  
+  button_load = createButton('Load Agents')
+  button_load.position(width / 2 - 50, height + 30)
+  button_load.mousePressed(loadAgents)
+  
+  button_reset = createButton('Reset')
+  button_reset.position(width - 50, height)
+  button_reset.mousePressed(resetSketchWithoutLoad)
+
   checkbox = createCheckbox(' Debug!')
   checkbox.position(0, height)
 }
@@ -91,33 +128,28 @@ function draw() {
     if (debug) show(qtree)
   }
   if (agents.every((agent) => agent.choice === agents[0].choice)) {
-    getNextGeneration(`GAME OVER !!! ${agents[0].choice} WINS.`)
+    getNextGeneration(`GAME OVER !!! ${agents[0].choice} WINS.`, false)
   }
-  // if (GEN < 60 && frame > 150) {
-  //     getNextGeneration("TIMEOUT !!!")
-  // }
-  // if (GEN >= 60 && frame > 400) {
-  //     getNextGeneration("TIMEOUT !!!")
-  // }
+  if (GEN <= 100 && frame > 150) {
+      getNextGeneration("TIMEOUT !!!", true)
+  }
+  if (GEN > 100 && frame > 400) {
+      getNextGeneration("TIMEOUT !!!", true)
+  }
 
-  // if (GEN % 5 === 0 && frame === 0) {
-  //   print('Saving weights...')
-  //   // every 50 generation save progress
-  //   // save all the agents
-  //   // for an agent
-  //   //      - choice
-  //   //      - brain
-
-  //   let agentWriter = createWriter(`data${GEN}`, 'json')
-  //   agentWriter.print(JSON.stringify(agents))
-  //   agentWriter.close()
-  // }
+  if (GEN % 50 === 0 && frame === 0) {
+    // // every 50 generation save progress
+    // print('Saving weights...')
+    // let agentWriter = createWriter(`data${GEN}`, 'json')
+    // agentWriter.print(JSON.stringify(agents))
+    // agentWriter.close()
+  }
 }
 
-function getNextGeneration(text) {
+function getNextGeneration(text, isTimeout) {
   console.log(text)
   noLoop()
-  nextGeneration()
+  nextGeneration(isTimeout)
 }
 
 function show(qtree) {

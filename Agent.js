@@ -112,6 +112,26 @@ class AgentGeneric extends Agent {
     )
   }
 
+  static fromJSON(data) {
+    // assert data is JSON
+    // create a new agent and then overwrite its features
+    let agent = new AgentGeneric(data.choice)
+    agent.choice_code = data.choice_code
+    agent.choice_history = data.choice_history
+    agent.choice_code_history = data.choice_code_history
+    
+    agent.id = data.id
+    agent.position = createVector(data.position.x, data.position.y)
+    agent.velocity = createVector(data.velocity.x, data.velocity.y)
+    agent.score = data.score
+    agent.prey_score = data.prey_score
+    agent.fitness = data.fitness
+    let temp_brain = NeuralNetwork.deserialize(data.brain)
+    agent.brain = temp_brain
+    agent.history = data.history
+    return agent
+  }
+
   // rock 0, paper 1, scissor 2, unknown: -1
   getChoiceCode(choice) {
     return choice === 'rock'

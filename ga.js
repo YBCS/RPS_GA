@@ -1,8 +1,8 @@
 // genetic algorithm stuff
 
-function nextGeneration() {
+function nextGeneration(isTimeout) {
   print('all agents ', agents)
-  let { rocks, papers, scissors } = segregate(agents)
+  let { rocks, papers, scissors } = segregate(agents, isTimeout)
   normalizeFitness(rocks)
   normalizeFitness(papers)
   normalizeFitness(scissors)
@@ -10,12 +10,14 @@ function nextGeneration() {
   // print('rocks after normalizing ', rocks )
   // print('paper after normalizing ', papers)
   // print('scissors after normalizing ', scissors)
+  
   new_rocks = generate(rocks)
   new_papers = generate(papers)
   new_scissors = generate(scissors)
-  print('generated new rocks ', new_rocks)
-  print('generated new papers ', new_papers)
-  print('generated new scissors ', new_scissors)
+  
+  // print('generated new rocks ', new_rocks)
+  // print('generated new papers ', new_papers)
+  // print('generated new scissors ', new_scissors)
 
   agents = [...new_rocks, ...new_papers, ...new_scissors]
   GEN += 1
@@ -23,12 +25,13 @@ function nextGeneration() {
   if (!isLooping()) loop()
 }
 
-function segregate(oldAgents) {
+function segregate(oldAgents, isTimeout) { // todo: is isTimeout necessary
   const rocks = []
   const papers = []
   const scissors = []
 
   function pushToAgentList(agent) {
+    if (!isTimeout) agent.score *= 3
     const net_score = agent.score + agent.prey_score * POINTS_PER_PREY
     const agentData = {
       net_score: net_score,
