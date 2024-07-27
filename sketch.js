@@ -11,6 +11,7 @@ let button
 let button_load
 let button_reset
 let checkbox
+let timeSlider
 let numOfAgents
 var debug = false
 var isPreloadAgents = false // just a flag for now
@@ -88,6 +89,9 @@ function setup() {
 
   checkbox = createCheckbox(' Debug!')
   checkbox.position(0, height)
+
+  timeSlider = createSlider(1, 20, 1);
+  timeSlider.position(10, height + 30);
 }
 
 function toggleLoop() {
@@ -95,6 +99,7 @@ function toggleLoop() {
 }
 
 function draw() {
+  strokeWeight(0)
   debug = checkbox.checked() ? true : false
   let qtree = QuadTree.create()
   background(0)
@@ -103,8 +108,8 @@ function draw() {
   text(`Generation : ${GEN}`, 5, 10)
   text(`frames : ${frame}`, 5, 20)
 
-  frame += 1
-  for (let cycle = 0; cycle < 1; cycle++) {
+  for (let cycle = 0; cycle < timeSlider.value(); cycle++) {
+    frame += 1
     for (let i = 0; i < agents.length; i++) {
       let curr = agents[i]
       rectangle = new Rectangle(

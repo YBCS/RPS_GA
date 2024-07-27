@@ -23,6 +23,7 @@
         - [] can replace with own library later
 
 
+
     - to check how its done in others:
         - normalization
         - is score never penalized ?
@@ -30,6 +31,7 @@
     - To think about
         - [] if I introduce obstacles, I will really know if this env is actully learning
         - [] what If I introduce some sort of health meter ?
+        - [] why does my agents dont move towards left as much
 
     - we can use Array.slice() to get a copy of an Array
     

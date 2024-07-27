@@ -69,13 +69,14 @@ class Agent {
   }
 
   move() {
-    this.position.add(this.velocity)
+    // this.position.add(this.velocity)
     this.score = min(this.score + 1, MAX_SCORE)
     const cellKey = `${floor(this.position.x)},${floor(this.position.y)}`;
     if (!this.visitedCells.has(cellKey)) {
       this.visitedCells.add(cellKey);
       this.explorationScore += 1
     }
+    this.survivalTime += 1
   }
 
   jitter() {
