@@ -43,7 +43,7 @@ class Agent {
       this.brain = ml5.neuralNetwork({
         inputs: 7,
         outputs: 2,
-        task: "regression",
+        task: "regression", // todo : read source: what does this do ?
         neuroEvolution: true,
       });
     }

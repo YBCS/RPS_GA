@@ -56,36 +56,24 @@ function segregate(oldAgents, isTimeout) { // todo: is isTimeout necessary
     }
 
     for (let rock of agent.history['rock']) {
-      let rock_net_score = rock.score
-      rock_net_score += rock.prey_score * POINTS_PER_PREY
-      rock_net_score += rock.explorationScore * 10
-      rock_net_score += rock.survivalTime * 5
       rocks.push({
-        net_score: rock_net_score,
+        net_score: rock.score,
         brain: rock.brain,
         fitness: 0,
         choice: rock.choice,
       })
     }
     for (let paper of agent.history['paper']) {
-      let paper_net_score = paper.score
-      paper_net_score += paper.prey_score * POINTS_PER_PREY
-      paper_net_score += paper.explorationScore * 10
-      paper_net_score += paper.survivalTime * 5
       papers.push({
-        net_score: paper_net_score,
+        net_score: paper.score,
         brain: paper.brain,
         fitness: 0,
         choice: paper.choice,
       })
     }
-    for (let scissor of agent.history['scissor']) {
-      let scissor_net_score = scissor.score
-      scissor_net_score += scissor.prey_score * POINTS_PER_PREY
-      scissor_net_score += scissor.explorationScore * 10
-      scissor_net_score += scissor.survivalTime * 5      
+    for (let scissor of agent.history['scissor']) {    
       scissors.push({
-        net_score: scissor_net_score,
+        net_score: scissor.score,
         brain: scissor.brain,
         fitness: 0,
         choice: scissor.choice,
