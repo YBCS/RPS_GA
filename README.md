@@ -17,11 +17,15 @@
     - [x] limit score to a particular max score
     - [x] each agent will store numOfAgent agents of all types (maximum). If max is reached, we will remove one of the agent with smallest net score.
         - example if there are 6 agents (numOfAgents is 2), a rock agent will have a history property like: history: [rock: [(2 rock)], p: [(2 p)], s: [(2 s)]]
-    - [] a new generation will look at all of history for getting accurate fitness
+    - [x] a new generation will look at all of history for getting accurate fitness
     - [] every 100 generation, back up all the weights 
-    - [] use ml5js library and see that it works
+    - [x] use ml5js library and see that it works
         - [] can replace with own library later
 
+    - try # right now, its not learning well. 
+        - remove quad tree and make sure all agents visible to all agents (maybe its the blidness that is making it incapable of learning)
+        - being stationary is still not solved (try punishing more harshly)
+        - reevaluate its finess calculation, (I might be missing something here)
 
 
     - to check how its done in others:
@@ -30,7 +34,6 @@
         - 
     - To think about
         - [] if I introduce obstacles, I will really know if this env is actully learning
-        - [] what If I introduce some sort of health meter ?
         - [] why does my agents dont move towards left as much
 
     - we can use Array.slice() to get a copy of an Array

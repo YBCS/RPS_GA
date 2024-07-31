@@ -52,7 +52,7 @@ function resetSketch(loadFromJson) {
     agents = loadedAgents
   } else {
     agents = []
-    numOfAgents = 2
+    numOfAgents = 10
     for (let i = 0; i < numOfAgents; i++) {
       agents.push(new AgentGeneric('rock'))
       agents.push(new AgentGeneric('paper'))
@@ -72,7 +72,7 @@ function resetSketchWithoutLoad() {
 function setup() {
   rectMode(CENTER)
   imageMode(CENTER)
-  createCanvas(250, 80)
+  createCanvas(300, 300)
   ml5.tf.setBackend("cpu");
   resetSketch()
   button = createButton('Pause/Play')
