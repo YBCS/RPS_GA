@@ -52,7 +52,7 @@ function resetSketch(loadFromJson) {
     agents = loadedAgents
   } else {
     agents = []
-    numOfAgents = 10
+    numOfAgents = 3
     for (let i = 0; i < numOfAgents; i++) {
       agents.push(new AgentGeneric('rock'))
       agents.push(new AgentGeneric('paper'))
@@ -72,7 +72,7 @@ function resetSketchWithoutLoad() {
 function setup() {
   rectMode(CENTER)
   imageMode(CENTER)
-  createCanvas(300, 300)
+  createCanvas(250, 250)
   ml5.tf.setBackend("cpu");
   resetSketch()
   button = createButton('Pause/Play')
@@ -107,6 +107,7 @@ function draw() {
   textSize(10)
   text(`Generation : ${GEN}`, 5, 10)
   text(`frames : ${frame}`, 5, 20)
+  noFill() // cleanup
 
   for (let cycle = 0; cycle < timeSlider.value(); cycle++) {
     frame += 1
@@ -124,7 +125,7 @@ function draw() {
       let points = qtree.query(range)
       curr.checkCollisionsAndDrawLine(points)
       curr.draw()
-      curr.jitter()
+      // curr.jitter()
       curr.update()
     }
     if (debug) show(qtree)

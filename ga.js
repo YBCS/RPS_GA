@@ -35,7 +35,6 @@ function segregate(oldAgents, isTimeout) { // todo: is isTimeout necessary
     let net_score = agent.score
     net_score += agent.prey_score * POINTS_PER_PREY
     net_score += agent.explorationScore * 10
-    net_score += agent.survivalTime * 5
     const agentData = {
       net_score: net_score,
       brain: agent.brain,

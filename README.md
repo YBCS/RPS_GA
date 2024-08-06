@@ -26,6 +26,12 @@
         - remove quad tree and make sure all agents visible to all agents (maybe its the blidness that is making it incapable of learning)
         - being stationary is still not solved (try punishing more harshly)
         - reevaluate its finess calculation, (I might be missing something here)
+    - [x] in debug mode, draw the boundary of each agent's "seight"
+    - [] clean up code
+    - [] stop simulation only incase of no interaction for "x" frames
+    - [] alter fitness functions
+        - [] rewards for keeping close distance or away from predator or prey
+    - [] alter selection process
 
 
     - to check how its done in others:

@@ -29,11 +29,10 @@ class Agent {
     this.position.x = constrain(this.position.x, this.r, width - this.r)
     this.position.y = constrain(this.position.y, this.r, height - this.r)
 
-    this.score = 0 //  score is how many frames it has been alive
-    this.prey_score = 0 // how many prey it has eaten
-    this.explorationScore = 0 // how many cells it has explored
-    this.survivalTime = 0 // how long it has been alive
-    this.fitness = 0 // to get fitness; normalize the score
+    this.score = 0                //  score is how many frames it has been alive (upto MAX_SCORE)
+    this.prey_score = 0           // how many prey it has eaten
+    this.explorationScore = 0     // how many cells it has explored
+    this.fitness = 0              // to get fitness; normalize the score
     if (brain) {
       this.brain = brain.copy()
       // this.brain.mutate(mutate_fn)
@@ -69,14 +68,14 @@ class Agent {
   }
 
   move() {
-    // this.position.add(this.velocity)
+    // update fitness related hyperparameteres
+    this.position.add(this.velocity)
     this.score = min(this.score + 1, MAX_SCORE)
     const cellKey = `${floor(this.position.x)},${floor(this.position.y)}`;
     if (!this.visitedCells.has(cellKey)) {
       this.visitedCells.add(cellKey);
       this.explorationScore += 1
     }
-    this.survivalTime += 1
   }
 
   jitter() {
@@ -168,7 +167,6 @@ class AgentGeneric extends Agent {
     let cur_net_score = agent.score
     cur_net_score += agent.prey_score * POINTS_PER_PREY
     cur_net_score += agent.explorationScore * 10
-    cur_net_score += agent.survivalTime * 5
 
     agent.history[agent.choice].push({
       choice: agent.choice,
@@ -176,7 +174,6 @@ class AgentGeneric extends Agent {
       score: 0.6 * cur_net_score,
       prey_score: agent.prey_score,
       explorationScore: agent.explorationScore,
-      survivalTime: agent.survivalTime,
       brain: agent.brain.copy(),
     })
 
@@ -192,7 +189,6 @@ class AgentGeneric extends Agent {
         let past_net_score = past_agent.score
         past_net_score += past_agent.prey_score * POINTS_PER_PREY
         past_net_score += past_agent.explorationScore * 10
-        past_net_score += past_agent.survivalTime * 5
         if (past_net_score < least_net_score) {
           least_net_score = past_net_score
           least_net_score_index = i
@@ -225,7 +221,6 @@ class AgentGeneric extends Agent {
     looser.score = 0
     looser.prey_score = 0
     looser.explorationScore = 0
-    looser.survivalTime = 0
     looser.visitedCells = new Set()
     winner.prey_score += 1
   }
@@ -246,11 +241,18 @@ class AgentGeneric extends Agent {
         image(mask, this.position.x, this.position.y, this.r, this.r)
         break
     }
+    if (debug) {
+      strokeWeight(1)
+      stroke("red")
+      noFill()
+      circle(this.position.x, this.position.y, this.r * 2 * 2)
+    }    
   }
 
   update() {
     super.move()
     super.boundary()
+    this.constrainToBox()
   }
 
   // todo : can I use a function so that DRY ?
@@ -376,36 +378,37 @@ class AgentGeneric extends Agent {
     this.think(predator, prey)
   }
 
+  constrainToBox() {
+    this.position.x = constrain(this.position.x, this.r / 2, width - this.r / 2)
+    this.position.y = constrain(this.position.y, this.r / 2, height - this.r / 2)    
+  }
+
   think(nearest_predatory, nearest_prey) {
     // if we are scissor; nearest predator = rock, nearest prey = paper
     // inputs can be null too
+    // inputs[i] needs to be in range[0,1]
+
     let inputs = [0, 0, 0, 0, 0, 0, 0] // pos, predotor, prey
     let pos = this.position
-    // inputs[0] = map(pos.x, 0, width, 0, 1)  // 	todo : how does FlappyLearning does this normalization
-    // inputs[1] = map(pos.y, 0, height, 0, 1)
-    inputs[0] = pos.x
-    inputs[1] = pos.y
+    inputs[0] = pos.x / width
+    inputs[1] = pos.y / height
 
     if (nearest_predatory) {
       let predator = nearest_predatory.userData.position
-      // inputs[2] = map(predator.x, 0, width, 0, 1)
-      // inputs[3] = map(predator.y, 0, height, 0, 1)
-      inputs[2] = predator.x
-      inputs[3] = predator.y
+      inputs[2] = predator.x / width
+      inputs[3] = predator.y / height
     }
     if (nearest_prey) {
       let prey = nearest_prey.userData.position
-      // inputs[4] = map(prey.x, 0, width, 0, 1)
-      // inputs[5] = map(prey.y, 0, height, 0, 1)
-      inputs[4] = prey.x
-      inputs[5] = prey.y
+      inputs[4] = prey.x / width
+      inputs[5] = prey.y / height
     }
+
     let curr_score = this.score
     curr_score += this.prey_score * POINTS_PER_PREY
     curr_score += this.explorationScore * 10
-    curr_score += this.survivalTime * 5
-    // let max_possible_score = MAX_SCORE + (numOfAgents * POINTS_PER_PREY)
-    inputs[6] = curr_score
+    let max_possible_score = MAX_SCORE + (numOfAgents * POINTS_PER_PREY) + (width * height)
+    inputs[6] = map(curr_score, 0, max_possible_score, 0, 1)
 
     let output = this.brain.predictSync(inputs)
     let angle = output[0].value * TWO_PI;
