@@ -14,23 +14,23 @@ let checkbox
 let timeSlider
 let numOfAgents
 var debug = false
-var isPreloadAgents = false // just a flag for now
 var GEN = 1 // generation
 var frame = 0
+// var isPreloadAgents = false // just a flag for now
 
-function handleData(data) {
-  print('loaded json', data)
-  loadedAgents = []
-  for (let agent of data) {
-    let agentFromJSON = AgentGeneric.fromJSON(agent)
-    loadedAgents.push(agentFromJSON)
-  }
-  print('all agents loaded ', loadedAgents)
-}
+// function handleData(data) {
+//   print('loaded json', data)
+//   loadedAgents = []
+//   for (let agent of data) {
+//     let agentFromJSON = AgentGeneric.fromJSON(agent)
+//     loadedAgents.push(agentFromJSON)
+//   }
+//   print('all agents loaded ', loadedAgents)
+// }
 
-function handleLoadError(err) {
-  console.error("FAILED TO LOAD JSON ", err)
-}
+// function handleLoadError(err) {
+//   console.error("FAILED TO LOAD JSON ", err)
+// }
 
 function preload() {
   rock = loadImage('assets/rock.png')
@@ -41,11 +41,11 @@ function preload() {
   // paper_sound = loadSound("assets/paper_effect.wav");
   // scissor_sound = loadSound("assets/scissor_effect.mp3");
 
-  isPreloadAgents ? loadJSON("checkpoint/data1050.json", handleData, handleLoadError) : null
+  // isPreloadAgents ? loadJSON("checkpoint/data1050.json", handleData, handleLoadError) : null
 }
 
 function resetSketch(loadFromJson) {
-  print('reset pressed ', loadFromJson)
+  // print('reset pressed ', loadFromJson)
   GEN = 1
   frame = 0
   if (loadFromJson) {
@@ -124,9 +124,9 @@ function draw() {
       let range = new Circle(curr.position.x, curr.position.y, curr.r * 2)
       let points = qtree.query(range)
       curr.checkCollisionsAndDrawLine(points)
-      curr.draw()
       // curr.jitter()
       curr.update()
+      curr.draw()
     }
     if (debug) show(qtree)
   }

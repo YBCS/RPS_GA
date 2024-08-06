@@ -31,10 +31,10 @@ function segregate(oldAgents, isTimeout) { // todo: is isTimeout necessary
   const scissors = []
 
   function pushToAgentList(agent) {
-    if (!isTimeout) agent.score *= 3
     let net_score = agent.score
     net_score += agent.prey_score * POINTS_PER_PREY
     net_score += agent.explorationScore * 10
+    if (!isTimeout) net_score *= 10 // todo : does this actually help ?
     const agentData = {
       net_score: net_score,
       brain: agent.brain,

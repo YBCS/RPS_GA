@@ -1,13 +1,3 @@
-function mutate_fn(x) {
-  if (random(1) < 0.1) {
-    let offset = randomGaussian() * 0.5
-    let newx = x + offset
-    return newx
-  } else {
-    return x
-  }
-}
-
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).substring(2)
 }
@@ -21,24 +11,19 @@ class Agent {
     this.id = uid()
     this.r = 20 // gets complicated if r is exposed
 
-    this.highlight = false
     this.position = createVector(x, y)
     this.velocity = createVector(random(-0.5, 0.5), random(-0.5, 0.5))
+    this.constrainToBox() // too close to one of the edges
 
-    // too close to one of the edges
-    this.position.x = constrain(this.position.x, this.r, width - this.r)
-    this.position.y = constrain(this.position.y, this.r, height - this.r)
-
-    this.score = 0                //  score is how many frames it has been alive (upto MAX_SCORE)
+    this.score = 0                // how many frames it has been alive (upto MAX_SCORE)
     this.prey_score = 0           // how many prey it has eaten
     this.explorationScore = 0     // how many cells it has explored
-    this.fitness = 0              // to get fitness; normalize the score
+    this.fitness = 0              // fitness is net-score normalized
+    
     if (brain) {
       this.brain = brain.copy()
-      // this.brain.mutate(mutate_fn)
       this.brain.mutate(MUTATION_RATE)
     } else {
-      // this.brain = new NeuralNetwork(6, 10, 4) // pos(x,y),  prey(x,y), predator(x,y)
       this.brain = ml5.neuralNetwork({
         inputs: 7,
         outputs: 2,
@@ -50,12 +35,12 @@ class Agent {
     this.history = { rock: [], paper: [], scissor: [] } // cache numOfAgents agents of each type
   }
 
+  constrainToBox() {
+    this.position.x = constrain(this.position.x, this.r / 2, width - this.r / 2)
+    this.position.y = constrain(this.position.y, this.r / 2, height - this.r / 2)    
+  }
+
   draw(i) {
-    if (this.highlight) {
-      fill(255, 100)
-    } else {
-      fill('white')
-    }
     rect(this.position.x, this.position.y, this.r)
     stroke('green')
     if (i && debug) {
@@ -68,8 +53,9 @@ class Agent {
   }
 
   move() {
-    // update fitness related hyperparameteres
     this.position.add(this.velocity)
+
+    // update fitness related hyperparameteres
     this.score = min(this.score + 1, MAX_SCORE)
     const cellKey = `${floor(this.position.x)},${floor(this.position.y)}`;
     if (!this.visitedCells.has(cellKey)) {
@@ -113,11 +99,11 @@ class AgentGeneric extends Agent {
     this.choice = choice
     this.choice_code = this.getChoiceCode(choice)
 
-    this.choice_history = [this.choice] // recording its transition
+    this.choice_history = [this.choice]           // recording its transition
     this.choice_code_history = [this.choice_code] // recoring its transition
   }
 
-  // this will also mutate the brain
+  // mutates brain
   copy(brain) {
     return new AgentGeneric(
       this.choice,
@@ -127,27 +113,6 @@ class AgentGeneric extends Agent {
     )
   }
 
-  // // todo : can I use ml5.js for this ?
-  // static fromJSON(data) {
-  //   // assert data is JSON
-  //   // create a new agent and then overwrite its features
-  //   let agent = new AgentGeneric(data.choice)
-  //   agent.choice_code = data.choice_code
-  //   agent.choice_history = data.choice_history
-  //   agent.choice_code_history = data.choice_code_history
-    
-  //   agent.id = data.id
-  //   agent.position = createVector(data.position.x, data.position.y)
-  //   agent.velocity = createVector(data.velocity.x, data.velocity.y)
-  //   agent.score = data.score
-  //   agent.prey_score = data.prey_score
-  //   agent.fitness = data.fitness
-  //   // todo : what about this ?
-  //   let temp_brain = NeuralNetwork.deserialize(data.brain)
-  //   agent.brain = temp_brain
-  //   agent.history = data.history
-  //   return agent
-  // }
 
   // rock 0, paper 1, scissor 2, unknown: -1
   getChoiceCode(choice) {
@@ -160,10 +125,10 @@ class AgentGeneric extends Agent {
       : -1
   }
 
-  updateHistory(agent) { // agent is looser
+  updateHistory(agent) { // looser agent
     // add history to the agent
+    // cannot push an agent directly because of reference error
 
-    // I cannot push an agent directly because of reference error
     let cur_net_score = agent.score
     cur_net_score += agent.prey_score * POINTS_PER_PREY
     cur_net_score += agent.explorationScore * 10
@@ -171,7 +136,7 @@ class AgentGeneric extends Agent {
     agent.history[agent.choice].push({
       choice: agent.choice,
       choice_code: this.getChoiceCode(agent.choice),
-      score: 0.6 * cur_net_score,
+      score: 0.6 * cur_net_score, // save 60% score
       prey_score: agent.prey_score,
       explorationScore: agent.explorationScore,
       brain: agent.brain.copy(),
@@ -204,9 +169,9 @@ class AgentGeneric extends Agent {
 
   updateChoice(winner, looser) {
     /*
-		update the choice of looser
-		mutate the winner brain
-		update score of looser and then winner
+      update the choice of looser
+      mutate the winner brain
+      update score of looser and then winner
 		*/
 
     looser.choice_history.push(winner.choice)
@@ -218,6 +183,7 @@ class AgentGeneric extends Agent {
     let winner_brain = winner.brain.copy() // can it create unwanted reference ?
     winner_brain.mutate(MUTATION_RATE)
     looser.brain = winner_brain
+    
     looser.score = 0
     looser.prey_score = 0
     looser.explorationScore = 0
@@ -242,6 +208,7 @@ class AgentGeneric extends Agent {
         break
     }
     if (debug) {
+      // draw quadtree range
       strokeWeight(1)
       stroke("red")
       noFill()
@@ -250,8 +217,8 @@ class AgentGeneric extends Agent {
   }
 
   update() {
-    super.move()
-    super.boundary()
+    this.move()
+    this.boundary()
     this.constrainToBox()
   }
 
@@ -378,17 +345,12 @@ class AgentGeneric extends Agent {
     this.think(predator, prey)
   }
 
-  constrainToBox() {
-    this.position.x = constrain(this.position.x, this.r / 2, width - this.r / 2)
-    this.position.y = constrain(this.position.y, this.r / 2, height - this.r / 2)    
-  }
-
   think(nearest_predatory, nearest_prey) {
-    // if we are scissor; nearest predator = rock, nearest prey = paper
+    // Example: for scissor; nearest predator = rock, nearest prey = paper
     // inputs can be null too
     // inputs[i] needs to be in range[0,1]
 
-    let inputs = [0, 0, 0, 0, 0, 0, 0] // pos, predotor, prey
+    let inputs = [0, 0, 0, 0, 0, 0, 0] // position, predotor, prey
     let pos = this.position
     inputs[0] = pos.x / width
     inputs[1] = pos.y / height
@@ -407,7 +369,7 @@ class AgentGeneric extends Agent {
     let curr_score = this.score
     curr_score += this.prey_score * POINTS_PER_PREY
     curr_score += this.explorationScore * 10
-    let max_possible_score = MAX_SCORE + (numOfAgents * POINTS_PER_PREY) + (width * height)
+    let max_possible_score = MAX_SCORE + (numOfAgents * POINTS_PER_PREY) + (width * height * 10)
     inputs[6] = map(curr_score, 0, max_possible_score, 0, 1)
 
     let output = this.brain.predictSync(inputs)
@@ -415,20 +377,6 @@ class AgentGeneric extends Agent {
     let magnitude = output[1].value;
     let force = p5.Vector.fromAngle(angle).setMag(magnitude);
     this.position.add(force)
-  }
-
-  moveTowardsTarget(closest_dst_from_src, color) {
-    if (closest_dst_from_src) {
-      debug ? this.drawLineUtil(closest_dst_from_src.userData, color) : null
-      let direction = p5.Vector.sub(
-        closest_dst_from_src.userData.position,
-        this.position
-      )
-      direction.setMag(1)
-      this.position.add(direction)
-      // I think something should happen to the velocity here too
-      // like target should inherit velocity of source ???
-    }
   }
 
   drawLineUtil(destination, color) {
