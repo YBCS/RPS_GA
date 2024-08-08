@@ -27,7 +27,7 @@
         - being stationary is still not solved (try punishing more harshly)
         - reevaluate its finess calculation, (I might be missing something here)
     - [x] in debug mode, draw the boundary of each agent's "seight"
-    - [] clean up code
+    - [x] clean up code
     - [] stop simulation only incase of no interaction for "x" frames
     - [] alter fitness functions
         - [] rewards for keeping close distance or away from predator or prey

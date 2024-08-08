@@ -16,6 +16,7 @@ let numOfAgents
 var debug = false
 var GEN = 1 // generation
 var frame = 0
+var idleFrame = 0 // how long it is not making any progress
 // var isPreloadAgents = false // just a flag for now
 
 // function handleData(data) {
@@ -48,6 +49,7 @@ function resetSketch(loadFromJson) {
   // print('reset pressed ', loadFromJson)
   GEN = 1
   frame = 0
+  idleFrame = 0
   if (loadFromJson) {
     agents = loadedAgents
   } else {
@@ -107,6 +109,7 @@ function draw() {
   textSize(10)
   text(`Generation : ${GEN}`, 5, 10)
   text(`frames : ${frame}`, 5, 20)
+  text(`Idle frames : ${idleFrame}`, 5, 20)
   noFill() // cleanup
 
   for (let cycle = 0; cycle < timeSlider.value(); cycle++) {
@@ -123,7 +126,7 @@ function draw() {
       qtree.insert(rectangle)
       let range = new Circle(curr.position.x, curr.position.y, curr.r * 2)
       let points = qtree.query(range)
-      curr.checkCollisionsAndDrawLine(points)
+      curr.checkCollisionsAndDrawLine(points) // if all idle, idleFrame++
       // curr.jitter()
       curr.update()
       curr.draw()
@@ -133,14 +136,21 @@ function draw() {
   if (agents.every((agent) => agent.choice === agents[0].choice)) {
     getNextGeneration(`GAME OVER !!! ${agents[0].choice} WINS.`, false)
   }
-  if (GEN <= 100 && frame > 400) {
+  if (agents.every((agent) => agent.isIdle)) {
+    print('all are idle, so ++idleFrame')
+    idleFrame += 1
+  } else {
+    idleFrame = 0
+  }
+
+  if (GEN <= 100 && idleFrame > 400) {
       getNextGeneration("TIMEOUT !!!", true)
   }
-  if (GEN > 100 && frame > 800) {
+  if (GEN > 100 && idleFrame > 800) {
       getNextGeneration("TIMEOUT !!!", true)
   }
 
-  if (GEN % 50 === 0 && frame === 0) {
+  if (GEN % 50 === 0 && idleFrame === 0) {
     // // every 50 generation save progress
     // print('Saving weights...')
     // let agentWriter = createWriter(`data${GEN}`, 'json')

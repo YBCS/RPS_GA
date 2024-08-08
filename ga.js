@@ -22,6 +22,7 @@ function nextGeneration(isTimeout) {
   agents = [...new_rocks, ...new_papers, ...new_scissors]
   GEN += 1
   frame = 0
+  idleFrame = 0
   if (!isLooping()) loop()
 }
 

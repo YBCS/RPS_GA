@@ -343,6 +343,8 @@ class AgentGeneric extends Agent {
     }
 
     this.think(predator, prey)
+
+    // return weather it is idle or not 
   }
 
   think(nearest_predatory, nearest_prey) {
